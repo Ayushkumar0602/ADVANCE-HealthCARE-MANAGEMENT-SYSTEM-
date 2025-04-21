@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload Reports</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+
+    let currentUID = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUID = user.uid;
+        loadReports();
+      } else {
+        window.location.href = "auth.html"; // redirect if not signed in
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const uploadForm = document.getElementById("uploadForm");
+      const reportFile = document.getElementById("reportFile");
+      const statusText = document.getElementById("uploadStatus");
+
+      uploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        statusText.textContent = "";
+        const file = reportFile.files[0];
+
+        if (!file) {
+          statusText.textContent = "❌ Please select a file.";
+          return;
+        }
+
+        try {
+          const fileRef = ref(storage, `reports/${currentUID}/${Date.now()}_${file.name}`);
+          await uploadBytes(fileRef, file);
+          statusText.textContent = "✅ Report uploaded successfully!";
+          reportFile.value = "";
+          loadReports();
+        } catch (error) {
+          console.error("❌ Upload failed:", error);
+          statusText.textContent = "❌ Upload failed. Check console.";
+        }
+      });
+    });
+
+    async function loadReports() {
+      const listContainer = document.getElementById("reportList");
+      listContainer.innerHTML = "<li class='text-gray-500'>Loading reports...</li>";
+
+      try {
+        const folderRef = ref(storage, `reports/${currentUID}`);
+        const result = await listAll(folderRef);
+        listContainer.innerHTML = "";
+
+        if (result.items.length === 0) {
+          listContainer.innerHTML = "<li class='text-gray-500'>No reports uploaded yet.</li>";
+        }
+
+        for (const itemRef of result.items) {
+          const url = await getDownloadURL(itemRef);
+          const li = document.createElement("li");
+          li.innerHTML = `<a href="${url}" target="_blank" class="text-blue-600 underline">${itemRef.name}</a>`;
+          listContainer.appendChild(li);
+        }
+      } catch (error) {
+        console.error("❌ Error loading reports:", error);
+        listContainer.innerHTML = "<li class='text-red-600'>Error loading reports. Check console.</li>";
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-gradient-to-br from-purple-200 to-pink-300 min-h-screen flex items-center justify-center p-6">
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8 space-y-6">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-purple-700">📂 Upload Medical Reports</h1>
+      <a href="dashboard.html" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-all">⬅ Back to Dashboard</a>
+    </div>
+
+    <form id="uploadForm" class="space-y-4">
+      <input type="file" id="reportFile" accept=".pdf,.jpg,.png" class="w-full border border-gray-300 rounded p-2" required />
+      <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition-all">Upload</button>
+      <p id="uploadStatus" class="text-sm font-medium"></p>
+    </form>
+
+    <div>
+      <h2 class="text-lg font-semibold text-gray-800 mb-2">📄 Uploaded Reports</h2>
+      <ul id="reportList" class="space-y-2 list-disc list-inside text-sm text-gray-700"></ul>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relaxing PMR Exercise</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+    #video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.15;
+    }
+    .overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.25);
+      z-index: 1;
+    }
+    .instruction {
+      z-index: 2;
+      font-size: 2rem;
+      font-weight: bold;
+      animation: breatheText 12s ease-in-out infinite;
+    }
+    @keyframes breatheText {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+    .feedback {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 1rem;
+      z-index: 3;
+    }
+    .bubbles {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 0;
+    }
+    .bubble {
+      position: absolute;
+      bottom: -100px;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      animation: rise 10s infinite ease-in;
+    }
+    @keyframes rise {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-100vh); }
+    }
+    #switchCameraBtn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center">
+  <video id="video" autoplay playsinline muted></video>
+  <div class="overlay"></div>
+  <div class="bubbles">
+    <div class="bubble" style="left: 10%; animation-duration: 8s;"></div>
+    <div class="bubble" style="left: 25%; animation-duration: 10s;"></div>
+    <div class="bubble" style="left: 40%; animation-duration: 9s;"></div>
+    <div class="bubble" style="left: 60%; animation-duration: 7s;"></div>
+    <div class="bubble" style="left: 75%; animation-duration: 11s;"></div>
+    <div class="bubble" style="left: 90%; animation-duration: 12s;"></div>
+  </div>
+
+  <div class="flex flex-col items-center justify-center text-white text-center relative z-10">
+    <h1 class="text-4xl font-bold mb-6 animate-pulse">🧘 Relax and Breathe</h1>
+    <button id="startBtn" class="px-6 py-3 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:bg-blue-200 transition mb-6">
+      Start Exercise
+    </button>
+    <p id="instruction" class="instruction hidden">Get ready...</p>
+    <div id="feedback" class="feedback hidden"></div>
+  </div>
+
+  <button id="switchCameraBtn" class="bg-white text-blue-600 px-4 py-2 rounded-full shadow-md hover:bg-blue-100">
+    Switch Camera
+  </button>
+
+  <audio id="bgMusic" loop autoplay>
+    <source src="https://cdn.pixabay.com/audio/2023/12/20/audio_4d1b12d6b2.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const steps = [
+      { text: "Take a deep breath and slowly make a fist", key: "left_wrist" },
+      { text: "Hold your breath and gently tighten your shoulders", key: "left_shoulder" },
+      { text: "Now breathe out and slowly relax your body", key: null },
+    ];
+
+    let currentStep = 0;
+    let detector;
+    let stream;
+    let facingMode = "user";
+
+    const startBtn = document.getElementById('startBtn');
+    const switchCameraBtn = document.getElementById('switchCameraBtn');
+    const video = document.getElementById('video');
+    const instructionText = document.getElementById('instruction');
+    const feedbackText = document.getElementById('feedback');
+    const bgMusic = document.getElementById('bgMusic');
+
+    async function setupCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+      video.srcObject = stream;
+      await new Promise(resolve => video.onloadedmetadata = resolve);
+    }
+
+    async function loadPoseModel() {
+      detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet);
+    }
+
+    async function startDetection() {
+      instructionText.classList.remove('hidden');
+      feedbackText.classList.remove('hidden');
+      bgMusic.play();
+
+      function nextStep() {
+        instructionText.textContent = steps[currentStep].text;
+        feedbackText.textContent = "Checking your posture...";
+        currentStep = (currentStep + 1) % steps.length;
+      }
+
+      nextStep();
+      setInterval(nextStep, 12000);
+
+      async function detect() {
+        const poses = await detector.estimatePoses(video);
+        if (poses[0]) {
+          const keypoints = poses[0].keypoints;
+          const step = steps[(currentStep - 1 + steps.length) % steps.length];
+
+          if (step.key) {
+            const kp = keypoints.find(k => k.name === step.key);
+            if (kp && kp.score > 0.6) {
+              feedbackText.textContent = `✅ Great! I see your ${step.key.replace('_', ' ')}.`;
+            } else {
+              feedbackText.textContent = `👀 Try moving your ${step.key.replace('_', ' ')} into view.`;
+            }
+          } else {
+            feedbackText.textContent = "🌬️ Nice job! Time to relax and breathe out.";
+          }
+        } else {
+          feedbackText.textContent = "📷 I can't see you. Please ensure you're in front of the camera.";
+        }
+        requestAnimationFrame(detect);
+      }
+      detect();
+    }
+
+    startBtn.addEventListener('click', async () => {
+      startBtn.classList.add('hidden');
+      await setupCamera();
+      await loadPoseModel();
+      startDetection();
+    });
+
+    switchCameraBtn.addEventListener('click', async () => {
+      facingMode = facingMode === "user" ? "environment" : "user";
+      await setupCamera();
+    });
+  </script>
+</body>
+</html>

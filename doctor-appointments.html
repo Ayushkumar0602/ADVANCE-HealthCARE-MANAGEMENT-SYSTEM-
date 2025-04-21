@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Doctor Appointments</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #fbc2eb, #a18cd1);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card-gradient {
+      background: linear-gradient(135deg, #ffffff, #f0f8ff);
+    }
+
+    .card-hover:hover {
+      transform: translateY(-5px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 text-gray-800">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-4xl font-extrabold text-center mb-6 text-white drop-shadow-lg animate-pulse">👨‍⚕️ Doctor Appointments</h1>
+
+    <!-- Spinner -->
+    <div id="loading" class="text-center text-yellow-200 font-semibold hidden animate-pulse">
+      🔄 Loading appointments...
+    </div>
+
+    <!-- Appointment Cards -->
+    <div id="appointmentsContainer" class="space-y-6"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      getDocs,
+      updateDoc,
+      doc
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const appointmentsContainer = document.getElementById("appointmentsContainer");
+    const loading = document.getElementById("loading");
+    let doctorPhone = "";
+
+    async function loadDoctorInfo(uid) {
+      const doctorQuery = query(collection(db, "doctors"), where("__name__", "==", uid));
+      const docSnap = await getDocs(doctorQuery);
+      if (!docSnap.empty) {
+        const doctorData = docSnap.docs[0].data();
+        doctorPhone = doctorData.phone;
+        loadAppointments();
+      } else {
+        appointmentsContainer.innerHTML = "<p class='text-red-600'>Doctor profile not found.</p>";
+        loading.classList.add("hidden");
+      }
+    }
+
+    async function loadAppointments() {
+      loading.classList.remove("hidden");
+      const q = query(collection(db, "appointments"), where("doctorId", "==", doctorPhone));
+      const querySnapshot = await getDocs(q);
+      loading.classList.add("hidden");
+
+      if (querySnapshot.empty) {
+        appointmentsContainer.innerHTML = "<p class='text-center text-white font-medium'>No appointments found.</p>";
+        return;
+      }
+
+      appointmentsContainer.innerHTML = "";
+
+      querySnapshot.forEach((docSnap) => {
+        const appt = docSnap.data();
+        const apptId = docSnap.id;
+        const date = appt.date?.toDate()?.toLocaleString() || "Unknown";
+        const status = appt.status || "pending";
+        const prescription = appt.prescription || "";
+
+        const card = document.createElement("div");
+        card.className = "card-gradient card-hover p-6 rounded-xl shadow-md border border-white/70 transition-all";
+
+        card.innerHTML = `
+          <h3 class="text-xl font-bold mb-2">👤 Patient: <span class="text-indigo-600">${appt.userId}</span></h3>
+          <p><strong>🗓 Date:</strong> ${date}</p>
+          <p><strong>💬 Issue:</strong> ${appt.issue}</p>
+          <p><strong>📡 Interaction:</strong> ${appt.interactionType}</p>
+          <p><strong>📌 Status:</strong> <span class="font-semibold text-${status === 'completed' ? 'green' : 'orange'}-600">${status}</span></p>
+          <p><strong>📄 Prescription:</strong> ${prescription || '<span class="italic text-gray-400">None</span>'}</p>
+
+          <textarea id="presc-${apptId}" class="w-full p-2 mt-3 border rounded bg-white border-indigo-300 focus:ring-2 focus:ring-indigo-500" placeholder="Write prescription here...">${prescription}</textarea>
+          <div class="flex items-center gap-3 mt-3">
+            <button onclick="sendPrescription('${apptId}')" class="bg-gradient-to-r from-green-400 to-green-600 text-white px-4 py-2 rounded hover:brightness-110">✅ Send Prescription</button>
+            <button onclick="markComplete('${apptId}')" class="bg-gradient-to-r from-blue-400 to-blue-600 text-white px-4 py-2 rounded hover:brightness-110">✔️ Mark Complete</button>
+          </div>
+        `;
+
+        appointmentsContainer.appendChild(card);
+      });
+    }
+
+    async function sendPrescription(id) {
+      const textarea = document.getElementById(`presc-${id}`);
+      const presc = textarea.value.trim();
+      if (!presc) return alert("Prescription cannot be empty.");
+      try {
+        const appointmentRef = doc(db, "appointments", id);
+        await updateDoc(appointmentRef, { prescription: presc });
+        alert("✅ Prescription sent.");
+        loadAppointments(); // Refresh
+      } catch (error) {
+        console.error("Error sending prescription:", error);
+        alert("❌ Failed to send prescription.");
+      }
+    }
+
+    async function markComplete(id) {
+      try {
+        const appointmentRef = doc(db, "appointments", id);
+        await updateDoc(appointmentRef, { status: "completed" });
+        alert("✅ Appointment marked as completed.");
+        loadAppointments();
+      } catch (error) {
+        console.error("Error marking complete:", error);
+        alert("❌ Failed to mark appointment as complete.");
+      }
+    }
+
+    window.sendPrescription = sendPrescription;
+    window.markComplete = markComplete;
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadDoctorInfo(user.uid);
+      } else {
+        alert("Please log in.");
+        window.location.href = "auth.html";
+      }
+    });
+  </script>
+</body>
+</html>

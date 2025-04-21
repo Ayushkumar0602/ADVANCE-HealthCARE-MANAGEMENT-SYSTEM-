@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Blogs and Tips</title>
+    <style>
+        /* Global styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh; /* Full height */
+            background: linear-gradient(45deg, #ff6a00, #ee0979, #ff6a00); /* Vibrant gradient */
+            background-size: 300% 300%;
+            animation: gradientAnimation 10s ease infinite;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Animation for gradient */
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Header styles */
+        h1 {
+            text-align: center;
+            font-size: 3rem;
+            margin-top: 50px;
+            color: #fff;
+        }
+
+        /* Blog container */
+        .blog-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 40px;
+        }
+
+        /* Blog card styles */
+        .blog-card {
+            background-color: #fff;
+            color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        /* Blog card hover effect */
+        .blog-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .blog-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .blog-card h3 {
+            font-size: 1.5rem;
+            padding: 20px;
+            color: #2c3e50;
+        }
+
+        .blog-card p {
+            font-size: 1rem;
+            color: #7f8c8d;
+            padding: 0 20px 20px;
+        }
+
+        .blog-card a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #ee0979;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 0 20px 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .blog-card a:hover {
+            background-color: #ff6a00;
+        }
+
+        /* Center content */
+        .content-wrapper {
+            margin: 0 auto;
+            width: 80%;
+        }
+
+        /* Spinner styles */
+        .spinner {
+            border: 4px solid #f3f3f3; /* Light gray */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none; /* Hidden by default */
+        }
+
+        /* Spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Load button styles */
+        #load-button {
+            display: block;
+            margin: 40px auto;
+            padding: 15px 30px;
+            background-color: #ff6a00;
+            color: white;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        #load-button:hover {
+            background-color: #ee0979;
+            transform: scale(1.1); /* Slightly enlarge on hover */
+        }
+
+        /* Footer style */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Vibrant Gradient Background -->
+    <div class="content-wrapper">
+        <h1>Health Blogs and Tips</h1>
+
+        <!-- Spinner for loading indication -->
+        <div id="spinner" class="spinner"></div>
+
+        <!-- Load Blogs Button -->
+        <button id="load-button">Load Blogs</button>
+
+        <!-- Blog container -->
+        <div id="blog-container" class="blog-container">
+            <!-- Blog posts will be dynamically inserted here -->
+        </div>
+
+        <div class="footer">
+            <p>Powered by Currents API</p>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "RZUmg18ulB6v_mwb-k4cO3jjzjFZCaAi1MNGsZDF5I5Pxd2m"; // Replace with your actual Currents API key
+        const API_URL = `https://api.currentsapi.services/v1/latest-news?category=health&apiKey=${API_KEY}`;
+
+        // Get the spinner and load button elements
+        const spinner = document.getElementById("spinner");
+        const loadButton = document.getElementById("load-button");
+        const blogContainer = document.getElementById("blog-container");
+
+        // Show spinner and load blogs when button is clicked
+        loadButton.addEventListener("click", () => {
+            // Show the spinner while data is being fetched
+            spinner.style.display = "block";
+            blogContainer.innerHTML = ""; // Clear any existing blog posts
+
+            // Fetch data from Currents API
+            fetch(API_URL)
+                .then(response => response.json())
+                .then(data => {
+                    // Hide spinner when data is loaded
+                    spinner.style.display = "none";
+
+                    // Check if there are articles in the response
+                    if (data && data.news) {
+                        data.news.forEach(article => {
+                            // Create blog card elements
+                            const blogCard = document.createElement("div");
+                            blogCard.classList.add("blog-card");
+
+                            const blogImg = document.createElement("img");
+                            blogImg.src = article.image || 'https://via.placeholder.com/300x200?text=No+Image'; // Fallback image
+
+                            const blogTitle = document.createElement("h3");
+                            blogTitle.textContent = article.title;
+
+                            const blogDescription = document.createElement("p");
+                            blogDescription.textContent = article.description || "No description available.";
+
+                            const readMoreLink = document.createElement("a");
+                            readMoreLink.href = article.url;
+                            readMoreLink.target = "_blank";
+                            readMoreLink.textContent = "Read more";
+
+                            // Append elements to blog card
+                            blogCard.appendChild(blogImg);
+                            blogCard.appendChild(blogTitle);
+                            blogCard.appendChild(blogDescription);
+                            blogCard.appendChild(readMoreLink);
+
+                            // Append blog card to container
+                            blogContainer.appendChild(blogCard);
+                        });
+                    } else {
+                        blogContainer.innerHTML = "<p>No health blogs available at the moment.</p>";
+                    }
+                })
+                .catch(error => {
+                    // Hide spinner and show error message
+                    spinner.style.display = "none";
+                    console.error('Error fetching blogs:', error);
+                    blogContainer.innerHTML = "<p>There was an error fetching the blog posts. Please try again later.</p>";
+                });
+        });
+    </script>
+
+</body>
+</html>

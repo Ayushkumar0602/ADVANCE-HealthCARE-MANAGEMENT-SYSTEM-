@@ -1,0 +1,105 @@
+<!-- view-patient.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient Stats</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+</head>
+<body class="bg-blue-50 min-h-screen p-6">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold">🩺 Patient Records</h2>
+      <button onclick="window.location.href='enter-patient.html'" 
+              class="text-blue-600 hover:underline text-sm">
+        ⬅️ Back to Search
+      </button>
+    </div>
+
+    <p id="patientName" class="text-lg mb-6 text-blue-700 font-semibold text-center">Loading patient details...</p>
+
+    <div id="healthStatsSection" class="mb-8">
+      <h3 class="text-xl font-semibold mb-2">📊 Health Stats</h3>
+      <div id="statsList" class="space-y-3 text-sm"></div>
+    </div>
+
+    <div id="reportsSection">
+      <h3 class="text-xl font-semibold mb-2">📁 Uploaded Reports</h3>
+      <ul id="reportList" class="list-disc list-inside text-sm text-gray-800"></ul>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const uid = urlParams.get('uid');
+
+    const nameEl = document.getElementById("patientName");
+    const statsList = document.getElementById("statsList");
+    const reportList = document.getElementById("reportList");
+
+    async function loadPatientData() {
+      if (!uid) {
+        nameEl.textContent = "❌ No patient UID provided.";
+        return;
+      }
+
+      // Load profile
+      const profileDoc = await getDoc(doc(db, "users", uid));
+      if (profileDoc.exists()) {
+        const data = profileDoc.data();
+        nameEl.textContent = `👤 ${data.name?.toUpperCase() || "Unknown User"}`;
+      } else {
+        nameEl.textContent = "❌ Patient not found.";
+        return;
+      }
+
+      // Load stats
+      const statsSnap = await getDocs(collection(db, "users", uid, "healthStats"));
+      if (statsSnap.empty) {
+        statsList.innerHTML = "<p class='text-gray-500'>No health stats available.</p>";
+      } else {
+        statsSnap.forEach(doc => {
+          const stat = doc.data();
+          statsList.innerHTML += `
+            <div class="bg-gray-100 p-3 rounded border">
+              <p><strong>📅 Date:</strong> ${stat.date || "N/A"}</p>
+              <p><strong>BP:</strong> ${stat.bp || "N/A"} | <strong>Sugar:</strong> ${stat.sugar || "N/A"} | <strong>HR:</strong> ${stat.hr || "N/A"}</p>
+            </div>`;
+        });
+      }
+
+      // Load reports
+      const reportsSnap = await getDocs(collection(db, "users", uid, "reports"));
+      if (reportsSnap.empty) {
+        reportList.innerHTML = "<li class='text-gray-500'>No reports found.</li>";
+      } else {
+        reportsSnap.forEach(doc => {
+          const file = doc.data();
+          reportList.innerHTML += `<li><a class="text-blue-600 underline" href="${file.url}" target="_blank">${file.name || "Unnamed Report"}</a></li>`;
+        });
+      }
+    }
+
+    loadPatientData();
+  </script>
+</body>
+</html>

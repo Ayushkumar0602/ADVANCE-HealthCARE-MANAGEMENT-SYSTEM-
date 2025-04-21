@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Breathing Exercise</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes breathe {
+      0%   { transform: scale(1); }
+      25%  { transform: scale(1.3); }
+      50%  { transform: scale(1.6); }
+      75%  { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .breathing-circle {
+      animation: breathe 12s ease-in-out infinite;
+    }
+
+    @keyframes bgFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .animated-bg {
+      background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #a18cd1, #fbc2eb, #f6d365, #96fbc4, #84fab0);
+      background-size: 500% 500%;
+      animation: bgFlow 25s ease infinite;
+    }
+
+    /* Hide audio controls */
+    audio {
+      display: none;
+    }
+  </style>
+</head>
+<body class="h-screen w-full animated-bg flex items-center justify-center transition-colors duration-1000">
+
+  <!-- Background Music -->
+  <audio id="bgMusic" loop autoplay>
+    <source src="soft-piano-music-312509 (1).mp3" type="audio/mpeg" />
+    Your browser does not support the audio element.
+  </audio>
+
+  <div class="text-center space-y-8">
+    <div id="circle" class="w-64 h-64 rounded-full bg-white/40 shadow-2xl mx-auto hidden"></div>
+    
+    <h1 id="breathText" class="text-4xl font-extrabold text-white hidden animate-pulse tracking-wide">
+      Breathe In...
+    </h1>
+
+    <button id="startBtn" class="px-8 py-4 bg-white text-purple-700 text-xl font-bold rounded-xl shadow-xl hover:scale-105 hover:bg-purple-100 transition-all duration-300">
+      🌬️ Start Exercise
+    </button>
+  </div>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const circle = document.getElementById("circle");
+    const text = document.getElementById("breathText");
+
+    const phases = ["Breathe In...", "Hold...", "Breathe Out..."];
+    let i = 0;
+
+    startBtn.addEventListener("click", () => {
+      startBtn.style.display = "none";
+      circle.classList.add("breathing-circle");
+      circle.style.display = "block";
+      text.style.display = "block";
+
+      setInterval(() => {
+        text.textContent = phases[i % phases.length];
+        i++;
+      }, 12000 / phases.length); // Slower transition: each phase takes 12 seconds
+    });
+  </script>
+</body>
+</html>

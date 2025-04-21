@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Government Auth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(270deg, #7F00FF, #E100FF, #00F260, #0575E6);
+      background-size: 800% 800%;
+      animation: gradientShift 15s ease infinite;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      width: 100%;
+      max-width: 420px;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .container:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 26px;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 18px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 15px;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus {
+      border-color: #6f42c1;
+      outline: none;
+      box-shadow: 0 0 5px rgba(111, 66, 193, 0.4);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      background-color: #6f42c1;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #512b90;
+    }
+
+    .toggle-link {
+      text-align: center;
+      margin-top: 15px;
+      color: #6f42c1;
+      cursor: pointer;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .toggle-link:hover {
+      color: #512b90;
+    }
+
+    #message {
+      margin-top: 18px;
+      text-align: center;
+      font-weight: bold;
+      color: #e63946;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+      }
+    }
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <h2 id="formTitle">Government Login</h2>
+
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+
+    <button id="loginBtn">Login</button>
+    <button id="signupBtn" style="display:none;">Sign Up</button>
+
+    <div class="toggle-link" onclick="toggleMode()">Don’t have an account? Sign up</div>
+
+    <div id="message"></div>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const emailEl = document.getElementById('email');
+    const passwordEl = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const signupBtn = document.getElementById('signupBtn');
+    const message = document.getElementById('message');
+    const formTitle = document.getElementById('formTitle');
+    let isSignupMode = false;
+
+    function toggleMode() {
+      isSignupMode = !isSignupMode;
+      formTitle.textContent = isSignupMode ? "Government Sign Up" : "Government Login";
+      loginBtn.style.display = isSignupMode ? "none" : "block";
+      signupBtn.style.display = isSignupMode ? "block" : "none";
+      document.querySelector('.toggle-link').textContent = isSignupMode ? "Already have an account? Login" : "Don’t have an account? Sign up";
+      message.textContent = "";
+    }
+
+    loginBtn.addEventListener('click', async () => {
+      const email = emailEl.value;
+      const password = passwordEl.value;
+      try {
+        const result = await auth.signInWithEmailAndPassword(email, password);
+        const doc = await db.collection("users").doc(result.user.uid).get();
+        if (doc.exists && doc.data().role === "government") {
+          window.location.href = "gov-dashboard.html";
+        } else {
+          message.textContent = "❌ Access denied: not a government user.";
+          auth.signOut();
+        }
+      } catch (err) {
+        message.textContent = "❌ " + err.message;
+      }
+    });
+
+    signupBtn.addEventListener('click', async () => {
+      const email = emailEl.value;
+      const password = passwordEl.value;
+      try {
+        const result = await auth.createUserWithEmailAndPassword(email, password);
+        await db.collection("users").doc(result.user.uid).set({
+          uid: result.user.uid,
+          email: email,
+          role: "government",
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        message.style.color = "#2ecc71";
+        message.textContent = "✅ Account created. You can now login.";
+        toggleMode();
+      } catch (err) {
+        message.style.color = "#e63946";
+        message.textContent = "❌ " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

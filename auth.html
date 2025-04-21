@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="transition duration-300">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Healthcare | Auth</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#06B6D4',
+            accent: '#F43F5E',
+          },
+          boxShadow: {
+            glass: '0 8px 32px 0 rgba(31, 38, 135, 0.25)',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    ::placeholder {
+      color: #a1a1aa;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script>
+    emailjs.init("GvH9iilO0RUT1NsZ5");
+  </script>
+</head>
+
+<body
+  class="bg-gradient-to-br from-blue-200 via-white to-purple-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen flex items-center justify-center relative transition-all duration-300">
+
+  <div class="absolute top-4 right-4">
+    <label
+      class="flex items-center gap-2 bg-white/70 dark:bg-gray-800/60 px-4 py-2 rounded-full shadow-md backdrop-blur-md text-sm font-medium text-gray-800 dark:text-gray-300 cursor-pointer transition hover:ring-2 hover:ring-blue-500">
+      <span>Dark Mode</span>
+      <input id="darkToggle" type="checkbox" class="accent-primary cursor-pointer" />
+    </label>
+  </div>
+
+  <div
+    class="glass shadow-glass rounded-2xl px-10 py-10 max-w-md w-full text-gray-900 dark:text-gray-100 space-y-6 animate-fadeIn">
+    <div class="text-center space-y-2">
+      <h2 id="authTitle" class="text-3xl font-bold">🔐 Login</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Welcome back to Smart Healthcare</p>
+    </div>
+
+    <form id="loginForm" class="space-y-5">
+      <div class="relative">
+        <input id="email" type="email" placeholder="Email" required
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">📧</span>
+      </div>
+
+      <div class="relative">
+        <input id="password" type="password" placeholder="Password" required
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔒</span>
+      </div>
+
+      <label class="flex items-center space-x-2 text-sm">
+        <input type="checkbox" id="isDoctor" class="accent-blue-600" />
+        <span>Login as Doctor/Professional</span>
+      </label>
+
+      <button id="submitBtn" type="submit"
+        class="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-lg font-semibold shadow-md hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300">
+        Login
+      </button>
+
+      <div id="spinner" class="hidden text-center">
+        <svg class="animate-spin h-6 w-6 mx-auto text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+          viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+      </div>
+    </form>
+
+    <p class="text-center text-sm mt-2">
+      <button id="toggleMode" class="text-blue-600 dark:text-blue-400 hover:underline transition-all duration-200">
+        Don't have an account? Sign Up
+      </button>
+    </p>
+
+    <p class="text-center text-sm mt-2">
+      <a href="forgot.html" class="text-accent hover:underline transition-all duration-200">
+        🔁 Forgot Password?
+      </a>
+    </p>
+
+    <p id="statusMsg" class="text-center text-sm text-red-500 dark:text-red-400"></p>
+  </div>
+
+  <div id="toast"
+    class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg hidden transition-all duration-300 animate-fadeIn">
+    Login Successful
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const loginForm = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const isDoctorCheckbox = document.getElementById("isDoctor");
+    const toggleModeBtn = document.getElementById("toggleMode");
+    const authTitle = document.getElementById("authTitle");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusMsg = document.getElementById("statusMsg");
+    const spinner = document.getElementById("spinner");
+    const toast = document.getElementById("toast");
+    const darkToggle = document.getElementById("darkToggle");
+
+    let isSignup = false;
+
+    darkToggle.addEventListener("change", () => {
+      document.documentElement.classList.toggle("dark");
+    });
+
+    toggleModeBtn.addEventListener("click", () => {
+      isSignup = !isSignup;
+      authTitle.textContent = isSignup ? "Sign Up" : "Login";
+      submitBtn.textContent = isSignup ? "Sign Up" : "Login";
+      toggleModeBtn.textContent = isSignup
+        ? "Already have an account? Login"
+        : "Don't have an account? Sign Up";
+    });
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.remove("hidden");
+      setTimeout(() => toast.classList.add("hidden"), 3000);
+    }
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusMsg.textContent = "";
+      spinner.classList.remove("hidden");
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      const isDoctor = isDoctorCheckbox.checked;
+
+      try {
+        let userCredential;
+
+        if (isSignup) {
+          userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const uid = userCredential.user.uid;
+          
+
+          if (isDoctor) {
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            emailjs.send("service_ui0p02j", "template_98fk3ee", {
+              to_email: email,
+              email: email,
+              name: "Healthcare Dashboard",
+              otp: otp
+            }).then(() => {
+              console.log("✅ OTP sent successfully");
+              localStorage.setItem("otp_email", email);
+              localStorage.setItem("otp", otp);
+              localStorage.setItem("pendingDoctorUid", uid);
+              window.location.href = `emailver.html?email=${encodeURIComponent(email)}`;
+            }).catch((error) => {
+              console.error("❌ OTP send error:", error);
+              statusMsg.textContent = "Failed to send OTP. Please try again.";
+              spinner.classList.add("hidden");
+            });
+          } else {
+            await setDoc(doc(db, "users", uid), {
+              email: email,
+              approved: true
+            });
+            window.location.href = "account.html";
+          }
+
+        } else {
+          userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const uid = userCredential.user.uid;
+
+          if (isDoctor) {
+            const docRef = doc(db, "doctors", uid);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) {
+              statusMsg.textContent = "Doctor profile not found.";
+              return;
+            }
+            const docData = docSnap.data();
+            if (docData.approved === false) {
+              statusMsg.textContent = "Request denied by admin.";
+              return;
+            } else if (docData.approved !== true) {
+              statusMsg.textContent = "Awaiting admin approval.";
+              return;
+            }
+            showToast("Login Successful");
+            setTimeout(() => {
+              window.location.href = "enter-patient.html";
+            }, 1000);
+          } else {
+            const userRef = doc(db, "users", uid);
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.exists() ? userSnap.data() : {};
+            showToast("Login Successful");
+            setTimeout(() => {
+              window.location.href = !userData.name || !userData.age || !userData.gender
+                ? "account.html"
+                : "dashboard.html";
+            }, 1000);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = err.message;
+      } finally {
+        spinner.classList.add("hidden");
+      }
+    });
+
+
+
+    
+  </script>
+
+</body>
+
+</html>

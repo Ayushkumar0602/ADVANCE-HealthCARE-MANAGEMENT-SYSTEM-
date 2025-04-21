@@ -1,0 +1,115 @@
+<!-- ✅ Beautified add-stats.html with vibrant UI and Firestore integration -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Health Stats</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #8e2de2, #4a00e0);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .glass-card {
+      backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
+
+    input::placeholder {
+      color: #ffffffcc;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="glass-card p-8 rounded-2xl max-w-md w-full text-white">
+    <h2 class="text-3xl font-extrabold mb-4 text-center">➕ Add Health Stats</h2>
+    <p id="successMsg" class="text-green-300 mb-4 hidden text-center font-semibold">✅ Stats saved successfully!</p>
+    <form id="statsForm" class="flex flex-col gap-4">
+      <input type="date" id="date" required
+        class="bg-white/10 border border-white/30 p-3 rounded-xl placeholder-white focus:outline-none focus:ring-2 focus:ring-violet-400" />
+      <input type="number" id="bp" placeholder="Blood Pressure" required
+        class="bg-white/10 border border-white/30 p-3 rounded-xl placeholder-white focus:outline-none focus:ring-2 focus:ring-violet-400" />
+      <input type="number" id="heartRate" placeholder="Heart Rate" required
+        class="bg-white/10 border border-white/30 p-3 rounded-xl placeholder-white focus:outline-none focus:ring-2 focus:ring-violet-400" />
+      <input type="number" id="sugar" placeholder="Blood Sugar" required
+        class="bg-white/10 border border-white/30 p-3 rounded-xl placeholder-white focus:outline-none focus:ring-2 focus:ring-violet-400" />
+      <button
+        class="bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-md"
+        type="submit">
+        🚀 Submit
+      </button>
+    </form>
+
+    <div class="text-center my-4 text-white/70 font-semibold">OR</div>
+    <button id="syncBtn"
+      class="w-full bg-gradient-to-r from-green-400 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:from-green-500 hover:to-emerald-700 transition-all duration-200 shadow-md">
+      📲 Sync from Smartwatch
+    </button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const statsForm = document.getElementById("statsForm");
+    const successMsg = document.getElementById("successMsg");
+
+    
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        statsForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const date = document.getElementById("date").value;
+          const bp = document.getElementById("bp").value;
+          const heartRate = document.getElementById("heartRate").value;
+          const sugar = document.getElementById("sugar").value;
+
+          try {
+            const statsRef = doc(db, "users", user.uid, "healthStats", date);
+            await setDoc(statsRef, {
+              bp: Number(bp),
+              heartRate: Number(heartRate),
+              sugar: Number(sugar),
+              date
+            });
+            successMsg.classList.remove("hidden");
+            statsForm.reset();
+            setTimeout(() => successMsg.classList.add("hidden"), 3000);
+          } catch (error) {
+            console.error("Error saving stats:", error);
+          }
+        });
+      }
+    });
+
+    
+
+  </script>
+</body>
+
+</html>

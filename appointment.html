@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Appointments</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #9333ea;
+      animation: spin 1s linear infinite;
+      margin: 2rem auto;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+
+
+<body class="bg-gradient-to-br from-purple-100 via-pink-100 to-blue-200 min-h-screen p-6">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-4xl font-extrabold text-center text-blue-800 mb-10 animate-fade-in">📅 My Appointments</h1>
+
+    <div class="space-y-10">
+      <!-- Appointment Form -->
+      <div class="bg-white shadow-2xl rounded-3xl p-6 border border-blue-200">
+        <h2 class="text-2xl font-bold text-purple-700 mb-6">📝 Book an Appointment</h2>
+        <form id="appointmentForm" class="space-y-4">
+          <div>
+            <label for="doctorPhone" class="block text-sm font-semibold text-gray-700">Doctor's Phone Number</label>
+            <input type="text" id="doctorPhone"
+              class="w-full p-3 border-2 border-purple-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+              required />
+          </div>
+          <div>
+            <label for="issue" class="block text-sm font-semibold text-gray-700">Issue</label>
+            <textarea id="issue"
+              class="w-full p-3 border-2 border-purple-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+              required></textarea>
+          </div>
+          <div>
+            <label for="interactionType" class="block text-sm font-semibold text-gray-700">Interaction Type</label>
+            <select id="interactionType"
+              class="w-full p-3 border-2 border-purple-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <option value="video">🎥 Video</option>
+              <option value="chat">💬 Chat</option>
+            </select>
+          </div>
+          <button type="submit"
+            class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition text-lg font-semibold">
+            ✅ Book Appointment
+          </button>
+        </form>
+      </div>
+
+      <!-- Upcoming Appointments -->
+      <h2 class="text-2xl font-bold text-blue-700">📌 Upcoming Appointments</h2>
+      <div id="appointmentsLoading" class="hidden">
+        <div class="spinner"></div>
+      </div>
+      <div id="appointmentsContainer" class="space-y-6"></div>
+    </div>
+  </div>
+
+
+  <!-- Doctor Ratings & Review System -->
+  <div id="doctors-ratings"
+    class="p-6 mt-12 bg-white border-t-4 border-blue-300 rounded-xl shadow-inner max-w-3xl mx-auto">
+    <h3 class="text-lg font-bold text-blue-800 mb-3">⭐ Doctor Ratings</h3>
+    <ul id="rating-list" class="space-y-1 text-sm text-gray-700"></ul>
+  </div>
+
+  <div id="review-section"
+    class="mt-10 hidden bg-white p-4 rounded-xl shadow-md max-w-md mx-auto border border-purple-200">
+    <h3 class="font-semibold text-gray-800 mb-2">Rate your doctor</h3>
+    <select id="star-rating" class="border p-2 rounded-md w-full">
+      <option value="1">⭐</option>
+      <option value="2">⭐⭐</option>
+      <option value="3">⭐⭐⭐</option>
+      <option value="4">⭐⭐⭐⭐</option>
+      <option value="5">⭐⭐⭐⭐⭐</option>
+    </select>
+    <button onclick="submitReview()"
+      class="mt-3 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 w-full">Submit Review</button>
+  </div>
+
+
+  <!-- Firebase + App Logic -->
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      where,
+      getDocs,
+      doc,
+      deleteDoc,
+      updateDoc,
+      getDoc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+  
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+  
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+  
+    const form = document.getElementById("appointmentForm");
+    const appointmentsContainer = document.getElementById("appointmentsContainer");
+    const appointmentsLoading = document.getElementById("appointmentsLoading");
+    let currentReviewAppt = null;
+  
+    // Book appointment
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+  
+      const user = auth.currentUser;
+      if (!user) return alert("Please log in.");
+  
+      const doctorPhone = document.getElementById("doctorPhone").value;
+      const issue = document.getElementById("issue").value;
+      const interactionType = document.getElementById("interactionType").value;
+  
+      const options = {
+        key: "rzp_test_Rdtf0SAIP65qoQ",
+        amount: 100, // in paise
+        currency: "INR",
+        name: "Health App",
+        description: "Appointment Payment",
+        handler: async function () {
+          try {
+            await addDoc(collection(db, "appointments"), {
+              userId: user.uid,
+              doctorId: doctorPhone,
+              issue,
+              interactionType,
+              status: "pending",
+              date: new Date(),
+              prescription: "",
+              reviewed: false
+            });
+  
+            // Optional: EmailJS
+            if (window.emailjs) {
+              emailjs.send("service_ui0p02j", "template_0i61wf6", {
+                user_name: user.displayName || "User",
+                user_email: user.email,
+                doctor_id: doctorPhone,
+                interaction_type: interactionType,
+                issue: issue,
+                date: new Date().toLocaleString()
+              });
+            }
+  
+            alert("Payment successful! Appointment booked.");
+            form.reset();
+            loadAppointments();
+          } catch (err) {
+            console.error("Error booking appointment:", err);
+            alert("Something went wrong. Please try again.");
+          }
+        },
+        prefill: {
+          email: user.email || "",
+        },
+        theme: {
+          color: "#6366F1"
+        }
+      };
+  
+      const rzp = new Razorpay(options);
+      rzp.open();
+    });
+  
+    // Load appointments
+    async function loadAppointments() {
+      const user = auth.currentUser;
+      if (!user) return;
+  
+      appointmentsLoading.classList.remove("hidden");
+      appointmentsContainer.innerHTML = "";
+  
+      const q = query(collection(db, "appointments"), where("userId", "==", user.uid));
+      const snapshot = await getDocs(q);
+      appointmentsLoading.classList.add("hidden");
+  
+      if (snapshot.empty) {
+        appointmentsContainer.innerHTML = `<p class="text-gray-600 text-center">No appointments found.</p>`;
+        return;
+      }
+  
+      checkForCompletedReview(snapshot);
+  
+      snapshot.forEach(docSnap => {
+        const appt = docSnap.data();
+        const apptId = docSnap.id;
+        const dateObj = appt.date instanceof Object && appt.date.toDate ? appt.date.toDate() : new Date();
+        const date = dateObj.toLocaleString();
+  
+        const card = document.createElement("div");
+        card.className = "bg-white border-2 border-purple-300 shadow-lg p-5 rounded-2xl hover:shadow-xl transition-all";
+        card.innerHTML = `
+          <h3 class="text-lg font-bold text-purple-800">👨‍⚕️ Doctor: ${appt.doctorId}</h3>
+          <p><span class="font-semibold text-gray-700">📅 Date:</span> ${date}</p>
+          <p><span class="font-semibold text-gray-700">🩺 Issue:</span> ${appt.issue}</p>
+          <p><span class="font-semibold text-gray-700">📌 Status:</span> ${appt.status}</p>
+          <p><span class="font-semibold text-gray-700">💊 Prescription:</span> ${appt.prescription || "No prescription yet."}</p>
+          <button onclick="deleteAppointment('${apptId}')" class="mt-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-xl hover:from-red-600 hover:to-pink-600 font-semibold shadow">🗑️ Delete</button>
+        `;
+        appointmentsContainer.appendChild(card);
+      });
+    }
+  
+    async function deleteAppointment(id) {
+      await deleteDoc(doc(db, "appointments", id));
+      alert("Appointment deleted.");
+      loadAppointments();
+    }
+    window.deleteAppointment = deleteAppointment;
+  
+    function checkForCompletedReview(snapshot) {
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.status === "completed" && !data.reviewed && !currentReviewAppt) {
+          currentReviewAppt = { id: docSnap.id, doctorPhone: data.doctorId };
+          document.getElementById("review-section").classList.remove("hidden");
+        }
+      });
+    }
+  
+    // Submit review
+    window.submitReview = async function () {
+      const stars = parseInt(document.getElementById("star-rating").value);
+      const { id: apptId, doctorPhone } = currentReviewAppt;
+  
+      await Promise.all([
+        updateDoc(doc(db, "appointments", apptId), { reviewed: true }),
+        (async () => {
+          const ref = doc(db, "stars", doctorPhone);
+          const snap = await getDoc(ref);
+          if (snap.exists()) {
+            const d = snap.data();
+            const newTotal = d.totalStars + stars;
+            const newCount = d.reviewCount + 1;
+            await setDoc(ref, {
+              average: newTotal / newCount,
+              totalStars: newTotal,
+              reviewCount: newCount
+            });
+          } else {
+            await setDoc(ref, {
+              average: stars,
+              totalStars: stars,
+              reviewCount: 1
+            });
+          }
+        })()
+      ]);
+  
+      alert("Thanks for your review!");
+      document.getElementById("review-section").classList.add("hidden");
+      currentReviewAppt = null;
+      loadRatings();
+    };
+  
+    function loadRatings() {
+      const ratingList = document.getElementById("rating-list");
+      ratingList.innerHTML = "";
+      getDocs(collection(db, "stars")).then(snapshot => {
+        if (snapshot.empty) {
+          ratingList.innerHTML = `<li class="text-gray-500">No doctor ratings available yet.</li>`;
+          return;
+        }
+  
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.average && data.reviewCount > 0) {
+            const phone = doc.id;
+            const avg = data.average.toFixed(1);
+            const li = document.createElement("li");
+            li.textContent = `📞 ${phone} — ⭐ ${avg}`;
+            ratingList.appendChild(li);
+          }
+        });
+      });
+    }
+  
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "auth.html";
+      } else {
+        await loadAppointments();
+        loadRatings();
+      }
+    });
+  </script>
+  
+
+  <!-- EmailJS (Optional for Notifications) -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script>
+    emailjs.init("GvH9iilO0RUT1NsZ5");
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Complete Your Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+</head>
+<body class="flex justify-center items-center min-h-screen bg-gray-100">
+  <form id="profileForm" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md space-y-4">
+    <h2 class="text-2xl font-bold text-center">Complete Your Profile</h2>
+    <input type="text" id="name" placeholder="Full Name" required class="w-full border p-2 rounded" />
+    <input type="number" id="age" placeholder="Age" required class="w-full border p-2 rounded" />
+    <select id="gender" class="w-full border p-2 rounded" required>
+      <option value="">Select Gender</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+    </select>
+    <input type="tel" id="phone" placeholder="Phone Number" required class="w-full border p-2 rounded" />
+    <input type="text" id="address" placeholder="Address" required class="w-full border p-2 rounded" />
+    <button type="submit" class="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700">
+      Save Profile
+    </button>
+    <p id="status" class="text-green-600 text-sm text-center"></p>
+  </form>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const form = document.getElementById("profileForm");
+    const status = document.getElementById("status");
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = "auth.html";
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const uid = user.uid;
+        const profileData = {
+          name: form.name.value,
+          age: form.age.value,
+          gender: form.gender.value,
+          phone: form.phone.value,
+          address: form.address.value
+        };
+        await setDoc(doc(db, "users", uid), profileData, { merge: true });
+        status.textContent = "✅ Profile saved!";
+        setTimeout(() => (window.location.href = "dashboard.html"), 1500);
+      });
+    });
+  </script>
+</body>
+</html>

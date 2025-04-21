@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Positive Thought</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(to right, #74ebd5, #ACB6E5);
+      animation: gradientShift 20s ease infinite;
+      min-height: 100vh;
+    }
+
+    @keyframes gradientShift {
+      0% { background: linear-gradient(to right, #74ebd5, #ACB6E5); }
+      50% { background: linear-gradient(to right, #fbc2eb, #a6c1ee); }
+      100% { background: linear-gradient(to right, #74ebd5, #ACB6E5); }
+    }
+
+    .fade-in {
+      animation: fadeIn 1s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center text-gray-800 px-4 py-20">
+  <div class="bg-white shadow-xl rounded-2xl p-8 max-w-xl w-full text-center space-y-6 fade-in">
+    <h1 class="text-3xl font-bold text-indigo-600">🌞 Daily Thought</h1>
+    <div id="quote" class="text-lg font-medium italic leading-relaxed">Loading...</div>
+    <div id="author" class="text-sm font-semibold text-right mt-4">—</div>
+    <button id="refreshBtn" class="mt-6 bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2 rounded-xl transition-all">Get Another</button>
+  </div>
+
+  <script>
+    const quoteEl = document.getElementById("quote");
+    const authorEl = document.getElementById("author");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    async function getQuote() {
+      quoteEl.innerText = "Loading...";
+      authorEl.innerText = "";
+      try {
+        const res = await fetch("https://favqs.com/api/qotd");
+        const data = await res.json();
+        quoteEl.innerText = `"${data.quote.body}"`;
+        authorEl.innerText = `— ${data.quote.author || 'Unknown'}`;
+      } catch (error) {
+        quoteEl.innerText = "Something went wrong. Try again!";
+        authorEl.innerText = "";
+        console.error(error);
+      }
+    }
+
+    refreshBtn.addEventListener("click", getQuote);
+
+    // Load on page start
+    getQuote();
+  </script>
+</body>
+</html>

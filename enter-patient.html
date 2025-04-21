@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enter Patient Phone</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #a1c4fd, #c2e9fb, #fbc2eb, #a6c1ee);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen px-4">
+
+  <div class="bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl w-full max-w-md animate-fade-in">
+    <h1 class="text-3xl font-bold mb-6 text-center text-blue-700">🔍 Enter Patient Phone</h1>
+    <form id="patientForm" class="space-y-4">
+      <input type="text" id="phone" placeholder="Enter patient's phone number" required
+        class="w-full border border-gray-300 p-3 rounded-lg transition duration-300" />
+      <button
+        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-2 rounded-lg shadow-md transition-all duration-300"
+        type="submit">
+        🔎 Search
+      </button>
+      <p id="status" class="text-red-600 text-sm text-center mt-2 font-medium"></p>
+    </form>
+
+    <!-- Aligned appointment link inside the card for symmetry -->
+    <div class="mt-6 text-center">
+      <a href="doctor-appointments.html"
+        class="inline-block text-indigo-700 font-medium hover:underline hover:text-indigo-900 transition duration-200">
+        📅 View My Appointments
+      </a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "auth.html";
+      } else {
+        console.log("✅ Doctor authenticated:", user.email);
+      }
+    });
+
+    document.getElementById("patientForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById("phone").value.trim();
+      const status = document.getElementById("status");
+
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("phone", "==", phone));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          const patientId = doc.id;
+          localStorage.setItem("patientId", patientId);
+          window.location.href = "doctor-emergency.html";
+        } else {
+          status.textContent = "❌ Patient not found.";
+        }
+      } catch (error) {
+        console.error("Error fetching patient:", error);
+        status.textContent = "⚠️ Error fetching patient.";
+      }
+    });
+
+    onAuthStateChanged(auth, user => {
+      if (user) loadAppointments();
+      else window.location.href = "auth.html";
+    });
+  </script>
+</body>
+</html>

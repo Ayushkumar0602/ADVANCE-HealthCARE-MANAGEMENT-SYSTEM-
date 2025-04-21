@@ -1,0 +1,21 @@
+key id  - rzp_test_Rdtf0SAIP65qoQ
+key secret - quyoM1OZ2tKhAnS3sMq1npiZ
+
+
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Only logged-in users can read/write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Optional: protect appointments too
+    match /appointments/{appointmentId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+  }
+}

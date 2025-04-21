@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
+  <div id="loader" class="text-xl font-semibold flex items-center gap-2">
+    <svg class="animate-spin h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor"
+        d="M4 12a8 8 0 018-8v8z"></path>
+    </svg>
+    Checking admin access...
+  </div>
+
+  <div id="adminPanel" class="hidden w-full max-w-5xl bg-white p-6 rounded shadow-md">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+      <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-2">
+      <input type="text" id="searchInput" placeholder="Search by name, email, or license number..." class="border p-2 rounded w-full md:w-2/3">
+      <button id="searchBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full md:w-auto">Search</button>
+    </div>
+
+    <div class="flex gap-2 mb-4">
+      <button id="pendingTab" class="tab bg-blue-200 px-3 py-1 rounded">Pending</button>
+      <button id="approvedTab" class="tab bg-green-200 px-3 py-1 rounded">Approved</button>
+      <button id="rejectedTab" class="tab bg-red-200 px-3 py-1 rounded">Rejected</button>
+    </div>
+
+    <div id="doctorList" class="space-y-4">
+      <!-- Doctor cards will be injected here -->
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      updateDoc,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore(app);
+
+    const loader = document.getElementById("loader");
+    const adminPanel = document.getElementById("adminPanel");
+    const doctorList = document.getElementById("doctorList");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+
+    const pendingTab = document.getElementById("pendingTab");
+    const approvedTab = document.getElementById("approvedTab");
+    const rejectedTab = document.getElementById("rejectedTab");
+
+    let doctorsData = [];
+    let currentTab = "pending";
+
+    async function checkAdmin(uid) {
+      const adminDoc = await getDoc(doc(db, "admins", uid));
+      return adminDoc.exists();
+    }
+
+    async function fetchDoctors() {
+      const querySnapshot = await getDocs(collection(db, "doctors"));
+      doctorsData = [];
+      querySnapshot.forEach((docSnap) => {
+        doctorsData.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderDoctors();
+    }
+
+    function renderDoctors() {
+      doctorList.innerHTML = "";
+
+      const query = searchInput.value.toLowerCase();
+
+      const filtered = doctorsData.filter(d => {
+        if (currentTab === "pending" && (d.approved || d.rejected)) return false;
+        if (currentTab === "approved" && !d.approved) return false;
+        if (currentTab === "rejected" && !d.rejected) return false;
+
+        return (
+          d.name?.toLowerCase().includes(query) ||
+          d.email?.toLowerCase().includes(query) ||
+          d.licenseNumber?.toLowerCase().includes(query)
+        );
+      });
+
+      if (filtered.length === 0) {
+        doctorList.innerHTML = "<p class='text-center text-gray-500'>No records found.</p>";
+        return;
+      }
+
+      filtered.forEach((doc) => {
+        const card = document.createElement("div");
+        card.className = "p-4 border rounded shadow-sm bg-gray-50";
+        card.innerHTML = `
+          <p><strong>Name:</strong> ${doc.name}</p>
+          <p><strong>Email:</strong> ${doc.email}</p>
+          <p><strong>Specialization:</strong> ${doc.specialization}</p>
+          <p><strong>License:</strong> ${doc.licenseNumber}</p>
+          <p><strong>Graduation Year:</strong> ${doc.graduationYear}</p>
+          <p><strong>DOB:</strong> ${doc.dob}</p>
+          <p><strong>Phone:</strong> ${doc.phone}</p>
+          <p><strong>Address:</strong> ${doc.address}</p>
+          <div class="mt-2 space-x-2">
+            ${!doc.approved && !doc.rejected ? `
+              <button class="approve bg-green-500 text-white px-3 py-1 rounded" data-id="${doc.id}">Approve</button>
+              <button class="reject bg-red-500 text-white px-3 py-1 rounded" data-id="${doc.id}">Reject</button>
+            ` : ""}
+          </div>
+        `;
+        doctorList.appendChild(card);
+      });
+
+      document.querySelectorAll(".approve").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          await updateDoc(doc(db, "doctors", id), { approved: true, rejected: false });
+          fetchDoctors();
+        });
+      });
+
+      document.querySelectorAll(".reject").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          await updateDoc(doc(db, "doctors", id), { approved: false, rejected: true });
+          fetchDoctors();
+        });
+      });
+    }
+
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "admin-login.html";
+    });
+
+    searchBtn.addEventListener("click", renderDoctors);
+    pendingTab.addEventListener("click", () => { currentTab = "pending"; renderDoctors(); });
+    approvedTab.addEventListener("click", () => { currentTab = "approved"; renderDoctors(); });
+    rejectedTab.addEventListener("click", () => { currentTab = "rejected"; renderDoctors(); });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const isAdmin = await checkAdmin(user.uid);
+        if (isAdmin) {
+          loader.classList.add("hidden");
+          adminPanel.classList.remove("hidden");
+          fetchDoctors();
+        } else {
+          loader.innerHTML = "❌ Access denied. You are not an authorized admin.";
+          setTimeout(() => window.location.href = "admin-login.html", 3000);
+        }
+      } else {
+        window.location.href = "admin-login.html";
+      }
+    });
+  </script>
+</body>
+</html>

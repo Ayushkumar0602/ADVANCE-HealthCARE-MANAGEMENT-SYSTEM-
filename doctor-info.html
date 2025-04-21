@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Doctor Info</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-blue-50 flex items-center justify-center min-h-screen p-4">
+  <div class="bg-white shadow-lg rounded p-6 w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center mb-4">Doctor Info</h2>
+    
+    <form id="doctorInfoForm" class="space-y-4">
+      <input type="text" id="name" placeholder="Full Name" required class="w-full p-2 border rounded" />
+      <input type="text" id="specialization" placeholder="Specialization" required class="w-full p-2 border rounded" />
+      <input type="text" id="license" placeholder="Medical License Number" required class="w-full p-2 border rounded" />
+      <input type="number" id="gradYear" placeholder="Year of Graduation" min="1950" max="2099" required class="w-full p-2 border rounded" />
+      <input type="date" id="dob" placeholder="Date of Birth" required class="w-full p-2 border rounded" />
+      <input type="text" id="phone" placeholder="Phone Number" required class="w-full p-2 border rounded" />
+      <textarea id="address" placeholder="Clinic Address" required class="w-full p-2 border rounded"></textarea>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Submit</button>
+    </form>
+
+    <button id="logoutBtn" class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 mt-4">Logout</button>
+
+    <p id="statusMsg" class="text-center text-sm text-green-600 mt-3"></p>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded shadow-lg hidden transition">
+    Logged out successfully
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const form = document.getElementById("doctorInfoForm");
+    const statusMsg = document.getElementById("statusMsg");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const toast = document.getElementById("toast");
+
+    // ✅ Toast helper
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+      setTimeout(() => {
+        toast.classList.add("hidden");
+      }, 3000);
+    }
+
+    // 📝 Submit Doctor Info
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const user = auth.currentUser;
+      if (!user) {
+        statusMsg.textContent = "You must be signed in.";
+        return;
+      }
+
+      const doctorData = {
+        name: document.getElementById("name").value.trim(),
+        specialization: document.getElementById("specialization").value.trim(),
+        licenseNumber: document.getElementById("license").value.trim(),
+        graduationYear: document.getElementById("gradYear").value.trim(),
+        dob: document.getElementById("dob").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        email: user.email,
+        approved: false
+      };
+
+      try {
+        await setDoc(doc(db, "doctors", user.uid), doctorData);
+        statusMsg.textContent = "Details submitted. Awaiting admin approval.";
+        form.reset();
+      } catch (error) {
+        console.error(error);
+        statusMsg.textContent = "Error submitting data.";
+      }
+    });
+
+    // 🚪 Logout Logic
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        showToast("Logged out successfully");
+        setTimeout(() => {
+          window.location.href = "auth.html";
+        }, 1500);
+      } catch (error) {
+        console.error("Logout failed:", error);
+        alert("Logout failed. Try again.");
+      }
+    });
+  </script>
+</body>
+</html>

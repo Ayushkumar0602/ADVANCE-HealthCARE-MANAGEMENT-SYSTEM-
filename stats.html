@@ -1,0 +1,88 @@
+<!-- ✅ Updated stats.html with Firestore path /users/{uid}/healthStats/{yyyy-mm-dd} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Health Stats</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-green-100 via-blue-100 to-purple-100 min-h-screen p-6">
+  <div class="max-w-4xl mx-auto bg-white/80 backdrop-blur-md p-8 shadow-2xl rounded-2xl border border-blue-200">
+    <h2 class="text-3xl font-extrabold text-center text-indigo-600 mb-6">📊 Your Health Stats</h2>
+
+    <div id="loadingStats" class="text-indigo-500 text-center mb-6 animate-pulse text-lg font-medium">
+      ⏳ Loading your latest stats...
+    </div>
+
+    <div id="statsContainer" class="hidden grid md:grid-cols-2 gap-6"></div>
+
+    <div class="text-center mt-10">
+      <a href="add-stats.html" class="inline-block bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg hover:scale-105 transform transition-all duration-300">
+        ➕ Add New Stats
+      </a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      doc,
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29",
+      measurementId: "G-TF76QCDK7C"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const loading = document.getElementById("loadingStats");
+    const statsContainer = document.getElementById("statsContainer");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const healthStatsRef = collection(doc(db, "users", user.uid), "healthStats");
+        const snapshot = await getDocs(healthStatsRef);
+        loading.style.display = "none";
+        statsContainer.classList.remove("hidden");
+
+        if (snapshot.empty) {
+          statsContainer.innerHTML = `
+            <div class="col-span-full text-center text-gray-600 text-lg">
+              😕 No stats available yet. Start by adding some!
+            </div>`;
+        } else {
+          const items = [];
+          snapshot.forEach((doc) => {
+            const stat = doc.data();
+            const statDate = doc.id;
+            items.push(`
+              <div class="bg-white shadow-md rounded-xl p-5 border border-indigo-200 hover:shadow-lg transition">
+                <p class="font-semibold text-indigo-700 text-lg mb-2">📅 Date: <span class="text-gray-800">${statDate}</span></p>
+                <p class="text-gray-700"><strong>💓 BP:</strong> ${stat.bp} mmHg</p>
+                <p class="text-gray-700"><strong>❤️ Heart Rate:</strong> ${stat.heartRate} bpm</p>
+                <p class="text-gray-700"><strong>🍭 Sugar:</strong> ${stat.sugar} mg/dL</p>
+              </div>
+            `);
+          });
+          statsContainer.innerHTML = items.join("");
+        }
+      }
+    });
+
+    
+  </script>
+</body>
+</html>

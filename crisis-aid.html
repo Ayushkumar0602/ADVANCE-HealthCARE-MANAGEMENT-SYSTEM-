@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emergency Aid Request</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f2f5f9;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      max-width: 700px;
+      width: 100%;
+    }
+
+    h1,
+    h3 {
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 8px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      font-size: 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .badge {
+      padding: 5px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      color: white;
+      font-size: 13px;
+    }
+
+    .approved {
+      background-color: green;
+    }
+
+    .pending {
+      background-color: orange;
+    }
+
+    .not-approved {
+      background-color: red;
+    }
+
+    .spinner {
+      margin: 10px auto;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #007bff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .action-btn {
+      font-size: 12px;
+      margin-left: 5px;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background-color: #ffc107;
+      color: white;
+    }
+
+    .cancel-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+  </style>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🚨 Emergency Aid Request</h1>
+    <p>Only logged-in users or health coordinators can access this page.</p>
+
+    <form id="crisisForm">
+      <label for="location">📍 Affected Location</label>
+      <input type="text" id="location" required />
+
+      <label for="needs">📝 Describe the Help You Need</label>
+      <textarea id="needs" required></textarea>
+
+      <label for="contact">📞 Your Contact (Phone or Email)</label>
+      <input type="text" id="contact" required />
+
+      <!-- Add these fields inside your existing form before the submit button -->
+      <label for="people">👥 Number of People Affected</label>
+      <input type="number" id="people" required />
+
+      <label for="scarcity">📦 Resource Scarcity (1 = Low, 5 = Critical)</label>
+      <input type="number" id="scarcity" min="1" max="5" required />
+
+
+      <input type="hidden" id="editId" value="" />
+
+      <button type="submit">Submit Request</button>
+    </form>
+
+    <h3>Your Requests</h3>
+    <div id="loadingSpinner" class="spinner" style="display:none;"></div>
+    <div id="requestsList"></div>
+
+    <div id="successMessage" style="color:green; font-weight:600; margin-top:10px; display:none;">
+      ✅ Request submitted!
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const form = document.getElementById("crisisForm");
+    const locationInput = document.getElementById("location");
+    const needsInput = document.getElementById("needs");
+    const contactInput = document.getElementById("contact");
+    const editIdInput = document.getElementById("editId");
+    const successMessage = document.getElementById("successMessage");
+    const requestsList = document.getElementById("requestsList");
+    const loadingSpinner = document.getElementById("loadingSpinner");
+
+    let currentUser = null;
+    let currentRole = null;
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        alert("Login required");
+        window.location.href = "auth.html";
+        return;
+      }
+
+      currentUser = user;
+      const userRef = db.collection("users").doc(user.uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        alert("User profile not found.");
+        return;
+      }
+
+      currentRole = userDoc.data().role || "user";
+      if (!["user", "healthcoordinator"].includes(currentRole)) {
+        alert("Unauthorized access");
+        return;
+      }
+
+      loadRequests();
+    });
+
+    // 🌍 Get coordinates using Nominatim
+    async function getCoordinates(location) {
+      const encoded = encodeURIComponent(location);
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}`;
+      const response = await fetch(url);
+      const results = await response.json();
+      if (results.length > 0) {
+        return {
+          lat: parseFloat(results[0].lat),
+          lng: parseFloat(results[0].lon)
+        };
+      }
+      return null;
+    }
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const location = locationInput.value;
+      const needs = needsInput.value;
+      const contact = contactInput.value;
+      const editId = editIdInput.value;
+      const numPeople = parseInt(document.getElementById("people").value);
+      const scarcity = parseInt(document.getElementById("scarcity").value);
+
+      const coordinates = await getCoordinates(location);
+      if (!coordinates) {
+        alert("Could not fetch location coordinates. Please try again with a more specific location.");
+        return;
+      }
+
+      // Distance calculation (simple approximation)
+      const supplyZone = { lat: 28.6139, lng: 77.2090 }; // Example: Delhi
+      const distance = Math.sqrt(
+        Math.pow(coordinates.lat - supplyZone.lat, 2) +
+        Math.pow(coordinates.lng - supplyZone.lng, 2)
+      ) * 111; // Rough km conversion
+
+      // Prioritization score
+      const priorityScore = (numPeople * 2) + (scarcity * 3) + (100 - distance);
+
+      const data = {
+        location,
+        needs,
+        contact,
+        role: currentRole,
+        userId: currentUser.uid,
+        status: "Pending",
+        coordinates,
+        numPeople,
+        scarcity,
+        distance: parseFloat(distance.toFixed(2)),
+        priorityScore: Math.round(priorityScore),
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        if (editId) {
+          await db.collection("crisis_requests").doc(editId).update(data);
+          editIdInput.value = "";
+        } else {
+          await db.collection("crisis_requests").add(data);
+        }
+
+        form.reset();
+        successMessage.style.display = "block";
+        setTimeout(() => successMessage.style.display = "none", 2000);
+        loadRequests();
+      } catch (err) {
+        alert("Error submitting request: " + err.message);
+      }
+    });
+
+
+    async function loadRequests() {
+      loadingSpinner.style.display = "block";
+      try {
+        const ref = db.collection("crisis_requests")
+          .where("userId", "==", currentUser.uid)
+          .orderBy("timestamp", "desc");
+
+        const snapshot = await ref.get();
+        loadingSpinner.style.display = "none";
+
+        if (snapshot.empty) {
+          requestsList.innerHTML = "<p>No requests submitted yet.</p>";
+          return;
+        }
+
+        let html = `<table width="100%" border="1" style="border-collapse: collapse;">
+                  <thead><tr>
+                    <th>Location</th><th>Needs</th><th>Contact</th><th>Status</th><th>Date</th><th>Actions</th>
+                  </tr></thead><tbody>`;
+
+        snapshot.forEach(doc => {
+          const r = doc.data();
+          const statusClass = r.status === "Approved" ? "approved" : (r.status === "Not Approved" ? "not-approved" : "pending");
+          const canEdit = r.status === "Pending";
+          const isApproved = r.status === "Approved";
+
+          html += `<tr>
+        <td>${r.location}</td>
+        <td>${r.needs}</td>
+        <td>${r.contact}</td>
+        <td><span class="badge ${statusClass}">${r.status}</span></td>
+        <td>${r.timestamp?.toDate().toLocaleString() || "—"}</td>
+        <td>
+          ${canEdit ? `
+            <button class="action-btn edit-btn" onclick="editRequest('${doc.id}', '${r.location}', '${r.needs}', '${r.contact}')">Edit</button>
+            <button class="action-btn cancel-btn" onclick="deleteRequest('${doc.id}')">Cancel</button>
+          ` : isApproved ? `
+            <a href="chat.html?requestId=${doc.id}">
+              <button class="action-btn" style="background:#28a745; color:white;">Chat</button>
+            </a>
+          ` : "—"}
+        </td>
+      </tr>`;
+        });
+
+        html += "</tbody></table>";
+        requestsList.innerHTML = html;
+
+      } catch (err) {
+        loadingSpinner.style.display = "none";
+        requestsList.innerHTML = "<p style='color:red;'>Failed to load requests.</p>";
+        console.error("Error loading requests:", err);
+      }
+    }
+
+    function editRequest(id, location, needs, contact) {
+      locationInput.value = location;
+      needsInput.value = needs;
+      contactInput.value = contact;
+      editIdInput.value = id;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deleteRequest(id) {
+      if (confirm("Are you sure you want to cancel this request?")) {
+        await db.collection("crisis_requests").doc(id).delete();
+        loadRequests();
+      }
+    }
+  </script>
+
+</body>
+
+</html>

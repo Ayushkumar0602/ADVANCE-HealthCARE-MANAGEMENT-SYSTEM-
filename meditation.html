@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guided Meditation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(to right, #FF7E5F, #feb47b);
+      animation: gradientShift 15s ease infinite;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      overflow-y: auto;
+      color: white;
+    }
+
+    @keyframes gradientShift {
+      0% { background: linear-gradient(to right, #FF7E5F, #feb47b); }
+      50% { background: linear-gradient(to right, #6a11cb, #2575fc); }
+      100% { background: linear-gradient(to right, #FF7E5F, #feb47b); }
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 30px;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .button {
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      background-color: #6C5CE7;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      transition: 0.3s;
+    }
+
+    .button:hover {
+      background-color: #A29BFE;
+      transform: scale(1.05);
+    }
+
+    .progress-bar {
+      width: 100%;
+      background-color: #ddd;
+      height: 10px;
+      border-radius: 5px;
+    }
+
+    .progress-bar-filled {
+      height: 100%;
+      background-color: #6C5CE7;
+      width: 0%;
+      border-radius: 5px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      color: #000;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    select {
+      color: #000;
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="text-3xl font-bold text-center">Guided Meditation</h1>
+
+    <!-- Duration Selector -->
+    <label for="duration">Select Duration:</label>
+    <select id="duration">
+      <option value="5">5 minutes</option>
+      <option value="10">10 minutes</option>
+      <option value="15">15 minutes</option>
+      <option value="20" selected>20 minutes</option>
+    </select>
+
+    <!-- Time Info -->
+    <div>
+      <p>Session Duration: <span id="session-duration">20 minutes</span></p>
+      <p>Remaining Time: <span id="remaining-time">20:00</span></p>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar">
+      <div id="progress-bar-filled" class="progress-bar-filled"></div>
+    </div>
+
+    <!-- Meditation Text -->
+    <div id="meditation-text" class="text-xl text-center mt-4">
+      Let's begin with a few moments of calm breathing...
+    </div>
+
+    <!-- Music Toggle -->
+    <button class="button" id="music-toggle">Play Ambient Music</button>
+
+    <!-- Start/Stop Buttons -->
+    <div class="flex gap-4">
+      <button class="button" id="start-meditation">Start Meditation</button>
+      <button class="button" id="stop-meditation">Stop Meditation</button>
+    </div>
+
+    <!-- Mood Tracker -->
+    <div>
+      <label for="mood">Mood Before Meditation:</label>
+      <select id="mood">
+        <option value="happy">Happy</option>
+        <option value="neutral">Neutral</option>
+        <option value="sad">Sad</option>
+      </select>
+    </div>
+
+    <!-- Reflection -->
+    <div>
+      <label for="reflection">Reflection After Meditation:</label>
+      <textarea id="reflection" rows="4" placeholder="Write your thoughts here..."></textarea>
+    </div>
+  </div>
+
+  <!-- Audio -->
+  <audio id="bg-music" loop>
+    <source src="soft-piano-music-312509 (1).mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+  <script>
+    let interval, totalDuration = 20 * 60, remainingTime = totalDuration, progress = 0;
+    const meditationSteps = [
+      "Take a deep breath in... Hold for 3 seconds... Now exhale slowly...",
+      "Inhale for 4 seconds... Hold for 4... Exhale for 4... Repeat...",
+      "Visualize a peaceful place... Feel the calm energy surrounding you...",
+      "Let go of any stress or tension in your body... Breathe deeply...",
+      "You are calm, peaceful, and centered... Focus on your breath...",
+      "Bring to mind something you are grateful for..."
+    ];
+
+    const durationEl = document.getElementById('duration');
+    const sessionDurationEl = document.getElementById('session-duration');
+    const remainingTimeEl = document.getElementById('remaining-time');
+    const progressBarEl = document.getElementById('progress-bar-filled');
+    const meditationTextEl = document.getElementById('meditation-text');
+    const musicBtn = document.getElementById('music-toggle');
+    const startBtn = document.getElementById('start-meditation');
+    const stopBtn = document.getElementById('stop-meditation');
+    const audio = document.getElementById('bg-music');
+
+    let musicPlaying = false;
+
+    // Update duration on change
+    durationEl.addEventListener('change', () => {
+      totalDuration = parseInt(durationEl.value) * 60;
+      remainingTime = totalDuration;
+      sessionDurationEl.textContent = `${durationEl.value} minutes`;
+      updateTimeDisplay();
+      progressBarEl.style.width = '0%';
+      meditationTextEl.textContent = "Let's begin with a few moments of calm breathing...";
+    });
+
+    function updateTimeDisplay() {
+      const minutes = Math.floor(remainingTime / 60);
+      const seconds = String(remainingTime % 60).padStart(2, '0');
+      remainingTimeEl.textContent = `${minutes}:${seconds}`;
+    }
+
+    musicBtn.addEventListener('click', () => {
+      if (!musicPlaying) {
+        audio.play();
+        musicBtn.textContent = "Stop Ambient Music";
+      } else {
+        audio.pause();
+        musicBtn.textContent = "Play Ambient Music";
+      }
+      musicPlaying = !musicPlaying;
+    });
+
+    startBtn.addEventListener('click', () => {
+      clearInterval(interval); // avoid multiple timers
+      remainingTime = totalDuration;
+      progress = 0;
+      interval = setInterval(() => {
+        if (remainingTime <= 0) {
+          clearInterval(interval);
+          meditationTextEl.textContent = 'Meditation complete. Take a moment to reflect.';
+          return;
+        }
+
+        remainingTime--;
+        progress = ((totalDuration - remainingTime) / totalDuration) * 100;
+        progressBarEl.style.width = `${progress}%`;
+        updateTimeDisplay();
+
+        let stepIndex = Math.floor((totalDuration - remainingTime) / (totalDuration / meditationSteps.length));
+        if (stepIndex < meditationSteps.length) {
+          meditationTextEl.textContent = meditationSteps[stepIndex];
+        }
+      }, 1000);
+    });
+
+    stopBtn.addEventListener('click', () => {
+      clearInterval(interval);
+      audio.pause();
+      musicPlaying = false;
+      musicBtn.textContent = "Play Ambient Music";
+      meditationTextEl.textContent = "Meditation stopped. You may start again anytime.";
+      progressBarEl.style.width = "0%";
+      remainingTime = totalDuration;
+      updateTimeDisplay();
+    });
+
+    // Initialize display
+    updateTimeDisplay();
+  </script>
+</body>
+</html>

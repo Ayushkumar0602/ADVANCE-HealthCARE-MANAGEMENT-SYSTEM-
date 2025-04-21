@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartCare - Healthcare Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { font-family: 'Poppins', sans-serif; background: #f9fafe; scroll-behavior: smooth; }
+
+    header {
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      color: white;
+      padding: 80px 20px;
+      text-align: center;
+    }
+    header h1 { font-size: 48px; }
+    header p { margin-top: 20px; font-size: 20px; }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      background: white;
+      padding: 16px 0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    nav a { text-decoration: none; color: #0072ff; font-weight: 600; }
+    section { padding: 80px 20px; text-align: center; }
+    section h2 { font-size: 36px; margin-bottom: 20px; }
+    section p { max-width: 800px; margin: 0 auto 40px; font-size: 18px; color: #333; }
+
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      width: 280px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+    .card:hover { transform: translateY(-10px); }
+    .card h3 { margin-bottom: 10px; color: #0072ff; }
+
+    .slides {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: 20px;
+      padding-bottom: 20px;
+    }
+    .slide {
+      min-width: 300px;
+      flex: none;
+      background: #0072ff;
+      color: white;
+      padding: 40px 20px;
+      border-radius: 20px;
+      scroll-snap-align: start;
+    }
+
+    .cta {
+      background: #00c6ff;
+      color: white;
+      padding: 60px 20px;
+    }
+    .cta button {
+      padding: 12px 30px;
+      border: none;
+      font-size: 18px;
+      background: white;
+      color: #0072ff;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    footer {
+      background: #f1f1f1;
+      padding: 40px 20px;
+      text-align: center;
+      color: #555;
+      font-size: 14px;
+    }
+    footer a { color: #0072ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>SmartCare</h1>
+    <p>All-in-One 3D Healthcare Dashboard to manage, monitor and elevate digital health</p>
+  </header>
+
+  <nav>
+    <a href="#about">About</a>
+    <a href="#features">Features</a>
+    <a href="#slides">How It Works</a>
+    <a href="#terms">T&C</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <section id="about">
+    <h2>What is SmartCare?</h2>
+    <p>SmartCare is a centralized digital healthcare solution that tracks complete patient history, appointments, medical reports, doctor notes, and even provides emergency access for faster care delivery. It's built for doctors and patients alike with 3D data visualization, alerts, and real-time monitoring.</p>
+  </section>
+
+  <section id="features">
+    <h2>Core Features</h2>
+    <div class="features">
+      <div class="card">
+        <h3>🧑‍⚕️ Doctor & Patient Portal</h3>
+        <p>Separate dashboards for doctors and patients to manage data in real-time.</p>
+      </div>
+      <div class="card">
+        <h3>📅 Appointments & Video Calls</h3>
+        <p>Book, manage, and attend video consultations through a seamless system.</p>
+      </div>
+      <div class="card">
+        <h3>🔔 Smart Notifications</h3>
+        <p>Get appointment reminders, emergency alerts, and health updates instantly.</p>
+      </div>
+      <div class="card">
+        <h3>📊 Health Analytics</h3>
+        <p>Interactive 3D data visualizations and graphs for better health monitoring.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="slides">
+    <h2>How It Works</h2>
+    <div class="slides">
+      <div class="slide">
+        <h3>Step 1</h3>
+        <p>Signup using Email. Choose your role (Doctor or Patient).</p>
+      </div>
+      <div class="slide">
+        <h3>Step 2</h3>
+        <p>Complete profile and connect your health data securely.</p>
+      </div>
+      <div class="slide">
+        <h3>Step 3</h3>
+        <p>Access dashboards, book appointments, or manage records.</p>
+      </div>
+      <div class="slide">
+        <h3>Step 4</h3>
+        <p>Doctors can search history, write prescriptions & conduct calls.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2>Join SmartCare Today</h2>
+    <p>Experience the next-gen healthcare system designed for the future.</p>
+    <button onclick="window.location.href='option.html'">Get Started</button>
+  </section>
+
+  <section id="terms">
+    <h2>Terms & Conditions</h2>
+    <p>By using SmartCare, you agree to our data usage, privacy, and security policies. All patient information is securely stored and HIPAA compliant. Data is only shared with verified doctors or during emergencies upon consent.</p>
+  </section>
+
+  <footer id="contact">
+    <p>&copy; 2025 SmartCare. All rights reserved.</p>
+    <p><a href="mailto:support@smartcare.ai">support@smartcare.ai</a> | <a href="#">Privacy Policy</a></p>
+  </footer>
+
+</body>
+</html>

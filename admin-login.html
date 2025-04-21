@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Animated background */
+    .animated-bg {
+      background: linear-gradient(270deg, #00c9ff, #92fe9d, #f7797d, #a18cd1);
+      background-size: 800% 800%;
+      animation: gradientMove 15s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Floating card animation */
+    .float {
+      animation: floatEffect 4s ease-in-out infinite;
+    }
+
+    @keyframes floatEffect {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+  </style>
+</head>
+
+<body class="animated-bg flex items-center justify-center min-h-screen">
+
+  <div class="bg-white p-10 rounded-2xl shadow-2xl float w-full max-w-md transition-transform duration-500">
+    <h2 class="text-3xl font-bold text-center text-blue-700 mb-6">Admin Login</h2>
+    
+    <form id="adminLoginForm" class="space-y-5">
+      <input 
+        type="email" 
+        id="email" 
+        placeholder="Admin Email" 
+        required 
+        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-pink-400"
+      />
+      
+      <input 
+        type="password" 
+        id="password" 
+        placeholder="Password" 
+        required 
+        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-400"
+      />
+      
+      <button 
+        type="submit" 
+        class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg font-semibold text-lg hover:shadow-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+      >
+        🚀 Login as Admin
+      </button>
+    </form>
+
+    <p id="statusMsg" class="text-center mt-4 text-sm font-semibold text-red-600"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const allowedAdmins = ["admin@gmail.com"];
+
+    document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim().toLowerCase();
+      const password = document.getElementById("password").value.trim();
+      const statusMsg = document.getElementById("statusMsg");
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        if (allowedAdmins.includes(user.email.toLowerCase())) {
+          statusMsg.textContent = "Login successful!";
+          statusMsg.classList.remove("text-red-600");
+          statusMsg.classList.add("text-green-600");
+          setTimeout(() => {
+            window.location.href = "admin-panel.html";
+          }, 1000);
+        } else {
+          statusMsg.textContent = "Access denied. Not an authorized admin.";
+          await auth.signOut();
+        }
+      } catch (error) {
+        console.error(error);
+        statusMsg.textContent = "Login failed: " + error.message;
+      }
+    });
+  </script>
+</body>
+</html>

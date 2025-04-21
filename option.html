@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-500 ease-in-out">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Healthcare Login</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- AOS Animation Library -->
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+          animation: {
+            gradient: "gradientBG 6s ease infinite",
+          },
+          keyframes: {
+            gradientBG: {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-blue-300 via-purple-400 to-pink-300 dark:from-gray-900 dark:via-gray-800 dark:to-black bg-[length:400%_400%] animate-gradient min-h-screen flex items-center justify-center relative p-4 transition-colors duration-500 ease-in-out">
+
+  <!-- Dark Mode Toggle -->
+  <button id="toggleDark" class="absolute top-5 right-5 p-3 rounded-full bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-lg hover:scale-110 transition-transform duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+    <span id="toggleIcon" class="text-xl">🌙</span>
+  </button>
+
+  <!-- Frosted Glass Login Card -->
+  <div class="backdrop-blur-xl bg-white/60 dark:bg-white/10 border border-white/30 dark:border-gray-700 shadow-2xl rounded-3xl px-10 py-12 w-full max-w-md text-center space-y-8 transition-all duration-500 ease-in-out"
+       data-aos="zoom-in" data-aos-duration="800">
+
+    <!-- Title -->
+    <div class="space-y-2">
+      <h1 class="text-4xl font-extrabold text-gray-800 dark:text-white drop-shadow-sm">Smart Healthcare</h1>
+      <p class="text-gray-600 dark:text-gray-400 text-lg font-medium">Select your login type</p>
+    </div>
+
+    <!-- Login Buttons -->
+    <div class="flex flex-col gap-4 items-center w-full">
+      <button onclick="handleLogin(false)" class="w-full max-w-xs py-3 text-lg font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition duration-300 shadow-md hover:shadow-lg transform hover:scale-105">
+        👤 User Login
+      </button>
+
+      <button onclick="handleLogin(true)" class="w-full max-w-xs py-3 text-lg font-semibold rounded-xl text-white bg-green-600 hover:bg-green-700 transition duration-300 shadow-md hover:shadow-lg transform hover:scale-105">
+        🩺 Doctor / Professional Login
+      </button>
+
+      <a href="admin-login.html" class="w-full max-w-xs">
+        <button class="w-full py-3 text-lg font-semibold rounded-xl text-white bg-gray-900 hover:bg-black transition duration-300 shadow-md hover:shadow-lg transform hover:scale-105">
+          🛠️ Admin Panel
+        </button>
+      </a>
+
+      <a href="gov-auth.html" class="w-full max-w-xs">
+        <button class="w-full py-3 text-lg font-semibold rounded-xl text-white bg-gray-900 hover:bg-black transition duration-300 shadow-md hover:shadow-lg transform hover:scale-105">
+          🛠️ Government Login
+        </button>
+      </a>
+    </div>
+
+    <!-- Footer -->
+    <div class="pt-6 border-t border-white/30 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
+      &copy; 2025 Smart Healthcare System
+    </div>
+  </div>
+
+  <!-- JS: Login Redirect -->
+  <script>
+    function handleLogin(isDoctor) {
+      localStorage.setItem("isDoctorLogin", isDoctor ? "true" : "false");
+      window.location.href = "auth.html";
+    }
+
+    const toggleBtn = document.getElementById('toggleDark');
+    const icon = document.getElementById('toggleIcon');
+    const html = document.documentElement;
+
+    toggleBtn.addEventListener('click', () => {
+      html.classList.toggle('dark');
+      icon.textContent = html.classList.contains('dark') ? '☀️' : '🌙';
+    });
+  </script>
+
+  <!-- AOS Init -->
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+  <script>
+    AOS.init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Doctor - Emergency View</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">🩺 Patient Emergency Stats</h1>
+    <div class="space-x-4">
+      <button onclick="window.location.href='enter-patient.html'" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        🔄 Check Another Patient
+      </button>
+      <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+        🚪 Logout
+      </button>
+    </div>
+  </div>
+
+  <div id="content" class="space-y-6">
+    <div id="profile" class="bg-white p-4 rounded shadow"></div>
+    <div id="stats" class="bg-white p-4 rounded shadow"></div>
+  </div>
+
+  <!-- Firebase + Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth();
+
+    const patientId = localStorage.getItem("patientId");
+    const profileDiv = document.getElementById("profile");
+    const statsDiv = document.getElementById("stats");
+
+    if (!patientId) {
+      document.body.innerHTML = "<p class='text-red-500 text-center'>⚠️ Patient ID not found in session. Please search again.</p>";
+    } else {
+      const userDocRef = doc(db, "users", patientId);
+      const statsColRef = collection(db, "users", patientId, "healthStats");
+
+      try {
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          const profile = userSnap.data();
+          profileDiv.innerHTML = `
+            <h2 class="text-xl font-bold mb-2">👤 Profile</h2>
+            <p><strong>Name:</strong> ${profile.name}</p>
+            <p><strong>Age:</strong> ${profile.age}</p>
+            <p><strong>Gender:</strong> ${profile.gender}</p>
+            <p><strong>Phone:</strong> ${profile.phone}</p>
+            <p><strong>Address:</strong> ${profile.address}</p>
+          `;
+        } else {
+          profileDiv.textContent = "⚠️ Profile not found.";
+        }
+
+        const statsSnap = await getDocs(statsColRef);
+        if (!statsSnap.empty) {
+          statsDiv.innerHTML = `<h2 class="text-xl font-bold mb-2">📊 Health Stats</h2>`;
+          statsSnap.forEach(doc => {
+            const stat = doc.data();
+            statsDiv.innerHTML += `
+              <div class="border-b py-2">
+                <p><strong>Date:</strong> ${stat.date}</p>
+                <p>BP: ${stat.bp} | HR: ${stat.hr} | Sugar: ${stat.sugar}</p>
+              </div>
+            `;
+          });
+        } else {
+          statsDiv.innerHTML = `<p class="text-gray-500">No stats available for this patient.</p>`;
+        }
+      } catch (error) {
+        console.error("Error loading patient data:", error);
+        document.body.innerHTML = "<p class='text-red-500 text-center'>❌ Failed to load patient data.</p>";
+      }
+    }
+
+    // Logout function
+    window.logout = async function () {
+      try {
+        await signOut(auth);
+        localStorage.removeItem("patientId");
+        window.location.href = "auth.html";
+      } catch (error) {
+        console.error("Logout error:", error);
+        alert("Failed to logout.");
+      }
+    };
+  </script>
+</body>
+</html>

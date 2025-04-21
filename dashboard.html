@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en" class="transition duration-300">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Healthcare | Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6366F1',
+            accent: '#06b6d4',
+          },
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui']
+          },
+          animation: {
+            fade: 'fadeIn 1s ease-out',
+            pulseSlow: 'pulse 3s ease-in-out infinite',
+            borderShift: 'borderShift 4s linear infinite',
+            gradientMove: 'gradientMove 15s ease infinite'
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            borderShift: {
+              '0%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+              '100%': { backgroundPosition: '0% 50%' },
+            },
+            gradientMove: {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' }
+            }
+          },
+          backgroundImage: {
+            vibrant: "linear-gradient(-45deg, #6366F1, #06b6d4, #ec4899, #f97316)",
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    .animated-border {
+      border: 4px solid transparent;
+      background-image: linear-gradient(white, white),
+        linear-gradient(270deg, #6366F1, #06b6d4, #ec4899);
+      background-origin: border-box;
+      background-clip: content-box, border-box;
+      background-size: 300% 300%;
+      animation: borderShift 5s ease infinite;
+    }
+
+    @media (max-width: 768px) {
+      .responsive-box {
+        padding: 1.5rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+
+<body
+  class="min-h-screen flex font-sans bg-vibrant bg-[length:400%_400%] animate-gradientMove text-gray-800 dark:text-gray-100">
+
+  <!-- Sidebar -->
+  <aside
+    class="w-72 bg-white dark:bg-gray-900 shadow-2xl p-6 min-h-screen space-y-6 rounded-tr-3xl rounded-br-3xl border-r-4 border-primary">
+    <h2 class="text-4xl font-extrabold text-primary dark:text-white tracking-wide flex items-center gap-2">
+      <span class="text-3xl">📋</span> Dashboard
+    </h2>
+    <ul class="space-y-4 text-lg font-medium">
+      <li><a href="upload.html"
+          class="flex items-center gap-3 text-accent hover:text-white hover:bg-accent px-4 py-3 rounded-xl transition shadow-md hover:scale-105">📂
+          Upload Medical Report</a></li>
+      <li><a href="stats.html"
+          class="flex items-center gap-3 text-accent hover:text-white hover:bg-accent px-4 py-3 rounded-xl transition shadow-md hover:scale-105">📊
+          Health Stats</a></li>
+      <li><a href="mental-health.html"
+          class="flex items-center gap-3 text-accent hover:text-white hover:bg-accent px-4 py-3 rounded-xl transition shadow-md hover:scale-105">💊
+          Mental Health</a></li>
+      <li><a href="add-stats.html"
+          class="flex items-center gap-3 text-accent hover:text-white hover:bg-accent px-4 py-3 rounded-xl transition shadow-md hover:scale-105">➕
+          Add Stats</a></li>
+      <li><a href="appointment.html"
+          class="flex items-center gap-3 text-accent hover:text-white hover:bg-accent px-4 py-3 rounded-xl transition shadow-md hover:scale-105">👤
+          Appointment</a></li>
+      <li><a href="view-profile.html"
+          class="flex items-center gap-3 text-accent hover:text-white hover:bg-accent px-4 py-3 rounded-xl transition shadow-md hover:scale-105">👤
+          View Profile</a></li>
+      <li><a href="ai-suggestions.html"
+          class="flex items-center gap-3 text-accent hover:text-white hover:bg-accent px-4 py-3 rounded-xl transition shadow-md hover:scale-105">🤖
+          AI Suggestions</a></li>
+      <li><a href="lifestyle.html"
+          class="flex items-center gap-3 text-accent hover:text-white hover:bg-accent px-4 py-3 rounded-xl transition shadow-md hover:scale-105">🌿
+          Lifestyle</a></li>
+      <li>
+        <button id="logoutBtn"
+          class="flex items-center gap-3 text-red-500 hover:text-white hover:bg-red-500 px-4 py-3 rounded-xl transition shadow-md hover:scale-105">🚪
+          Logout</button>
+      </li>
+    </ul>
+
+    <div class="mt-10 p-4 bg-gradient-to-tr from-primary to-accent text-white rounded-2xl shadow-lg animate-fade">
+      <h3 class="text-xl font-bold mb-2">🌟 About Us</h3>
+      <p class="text-sm leading-relaxed">We are a smart healthcare platform empowering patients and doctors with
+        real-time health tracking, AI suggestions, and seamless appointments.</p>
+    </div>
+
+    <div
+      class="p-4 mt-6 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-l-4 border-accent rounded-xl shadow-md animate-fade">
+      <h4 class="font-semibold text-lg mb-1">💡 Tip of the Day</h4>
+      <p class="text-sm">Stay hydrated and take short walks during work hours to improve circulation and energy!</p>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-10 transition-all duration-300 relative">
+    <!-- Notification -->
+    <div class="absolute top-6 right-6 z-50">
+      <button id="notifBtn" class="relative text-2xl hover:text-accent focus:outline-none">🔔
+        <span class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full px-1.5 animate-ping">1</span>
+      </button>
+      <div id="notifPanel"
+        class="hidden absolute right-0 mt-3 w-64 bg-white dark:bg-gray-800 shadow-xl rounded-xl border border-gray-300 dark:border-gray-700 p-4 z-50 animate-fade">
+        <h4 class="font-bold text-lg mb-2">Reminders</h4>
+        <ul class="space-y-2 text-sm">
+          <li>💊 Take your 10am medication</li>
+          <li>📅 Upcoming appointment at 2pm</li>
+          <li>🧘 Mindfulness break: 5 min</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Welcome Box -->
+    <div
+      class="bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 responsive-box animated-border space-y-6">
+      <div id="loading"
+        class="text-primary dark:text-accent animate-pulse text-2xl font-semibold mb-4 flex items-center gap-2">⏳
+        Loading user data...</div>
+      <h1 id="userName" class="text-5xl font-extrabold hidden animate-fade text-primary dark:text-accent mt-4"></h1>
+      <div
+        class="p-6 bg-gradient-to-br from-blue-100 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl text-center shadow-md">
+        <p class="text-lg font-medium">Your health is our priority. Track stats, manage appointments, and get
+          recommendations – all in one place.</p>
+      </div>
+    </div>
+
+    <!-- Feature Buttons -->
+    <!-- Feature Buttons -->
+    <div class="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+      <button onclick="location.href='crisis-aid.html'"
+        class="h-16 w-64 px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white text-lg font-semibold rounded-xl shadow-md hover:scale-105 transition-transform">
+        Health Crisis
+      </button>
+      <button onclick="location.href='health-blogs.html'"
+        class="h-16 w-64 px-6 py-3 bg-gradient-to-r from-blue-500 to-teal-500 text-white text-lg font-semibold rounded-xl shadow-md hover:scale-105 transition-transform">
+        Health Blogs
+      </button>
+      <button onclick="location.href='meditation.html'"
+        class="h-16 w-64 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg font-semibold rounded-xl shadow-md hover:scale-105 transition-transform">
+        Meditation
+      </button>
+      <button onclick="location.href='pmr-exercise.html'"
+        class="h-16 w-64 px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white text-lg font-semibold rounded-xl shadow-md hover:scale-105 transition-transform">
+        PMR
+      </button>
+      <button onclick="location.href='mindfulness-exercise.html'"
+        class="h-16 w-64 px-6 py-3 bg-gradient-to-r from-yellow-400 to-pink-500 text-white text-lg font-semibold rounded-xl shadow-md hover:scale-105 transition-transform">
+        Breathing Exercise
+      </button>
+      <button onclick="location.href='visual-relaxation.html'"
+        class="h-16 w-64 px-6 py-3 bg-gradient-to-r from-cyan-500 to-indigo-500 text-white text-lg font-semibold rounded-xl shadow-md hover:scale-105 transition-transform">
+        Visual Relaxation
+      </button>
+      <button onclick="location.href='Thought.html'"
+        class="h-16 w-64 px-6 py-3 bg-gradient-to-r from-green-400 to-blue-500 text-white text-lg font-semibold rounded-xl shadow-md hover:scale-105 transition-transform">
+        Thoughtful Meditation
+      </button>
+
+      <button onclick="location.href='Self-Love.html'"
+        class="h-16 w-64 px-6 py-3 bg-gradient-to-r from-green-400 to-blue-500 text-white text-lg font-semibold rounded-xl shadow-md hover:scale-105 transition-transform">
+        Self-Love
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Firebase Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const userNameElem = document.getElementById("userName");
+    const loading = document.getElementById("loading");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const uid = user.uid;
+        const docRef = doc(db, "users", uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const name = docSnap.data().name || "Welcome!";
+          userNameElem.textContent = `Welcome, ${name}`;
+        } else {
+          userNameElem.textContent = `Welcome, ${user.email}`;
+        }
+        loading.style.display = "none";
+        userNameElem.classList.remove("hidden");
+      } else {
+        window.location.href = "auth.html";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      signOut(auth).then(() => {
+        window.location.href = "auth.html";
+      });
+    });
+
+    document.getElementById("notifBtn").addEventListener("click", () => {
+      const panel = document.getElementById("notifPanel");
+      panel.classList.toggle("hidden");
+    });
+  </script>
+</body>
+
+</html>

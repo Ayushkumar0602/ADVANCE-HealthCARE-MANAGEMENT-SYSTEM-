@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" class="transition duration-300">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset Password | Smart Healthcare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#06B6D4',
+            accent: '#F43F5E',
+          },
+          boxShadow: {
+            glass: '0 8px 32px 0 rgba(31, 38, 135, 0.25)',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-br from-blue-200 via-white to-purple-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen flex items-center justify-center transition-all duration-300">
+
+  <div class="glass shadow-glass rounded-2xl px-10 py-10 max-w-md w-full text-gray-900 dark:text-gray-100 space-y-6 animate-fadeIn">
+    <div class="text-center space-y-2">
+      <h2 class="text-3xl font-bold">🔁 Reset Password</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Enter your email to receive a reset link</p>
+    </div>
+
+    <form id="resetForm" class="space-y-5">
+      <input id="resetEmail" type="email" placeholder="Email" required
+        class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white/70 dark:bg-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+      
+      <button type="submit"
+        class="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white text-lg font-semibold shadow-md hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300">
+        Send Reset Link
+      </button>
+    </form>
+
+    <p id="statusMsg" class="text-center text-sm text-red-500 dark:text-red-400"></p>
+
+    <p class="text-center text-sm mt-4">
+      <a href="auth.html" class="text-blue-600 dark:text-blue-400 hover:underline transition-all duration-200">
+        ← Back to Login
+      </a>
+    </p>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"
+    class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg hidden transition-all duration-300 animate-fadeIn">
+    Reset link sent
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("resetForm");
+    const emailInput = document.getElementById("resetEmail");
+    const statusMsg = document.getElementById("statusMsg");
+    const toast = document.getElementById("toast");
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.remove("hidden");
+      setTimeout(() => toast.classList.add("hidden"), 3000);
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusMsg.textContent = "";
+
+      const email = emailInput.value.trim();
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showToast("Reset link sent to your email");
+        form.reset();
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

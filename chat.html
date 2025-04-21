@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emergency Request Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+    .chat-container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      padding: 20px;
+    }
+    .message {
+      margin: 10px 0;
+      padding: 12px 16px;
+      border-radius: 8px;
+      max-width: 80%;
+      clear: both;
+    }
+    .message.sent {
+      background-color: #d1e7dd;
+      float: right;
+    }
+    .message.received {
+      background-color: #f8d7da;
+      float: left;
+    }
+    #messages {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+    #messageInput {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #sendButton {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="chat-container">
+    <h2>💬 Emergency Chat</h2>
+    <div id="messages"></div>
+    <textarea id="messageInput" placeholder="Type your message..."></textarea>
+    <button id="sendButton">Send</button>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDyBaQL4wHmFrllbQ1FyUDfGWf5H79u-2g",
+      authDomain: "health-46f91.firebaseapp.com",
+      projectId: "health-46f91",
+      storageBucket: "health-46f91.appspot.com",
+      messagingSenderId: "238309237516",
+      appId: "1:238309237516:web:b58d6e76d1443960ac9f29"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = urlParams.get("requestId");
+
+    const messagesDiv = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+
+    let currentUserId;
+    let currentUserRole;
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        alert("You must be logged in to access chat.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      currentUserId = user.uid;
+      const userDoc = await db.collection("users").doc(currentUserId).get();
+      currentUserRole = userDoc.data().role;
+
+      // Check if the request is approved before allowing chat
+      const requestDoc = await db.collection("crisis_requests").doc(requestId).get();
+      if (!requestDoc.exists || requestDoc.data().status !== "Approved") {
+        alert("This request is not approved yet. Chat is disabled.");
+        window.location.href = currentUserRole === "government" ? "gov-dashboard.html" : "crisis-aid.html";
+        return;
+      }
+
+      listenForMessages();
+    });
+
+    function listenForMessages() {
+      db.collection("chats")
+        .doc(requestId)
+        .collection("messages")
+        .orderBy("timestamp")
+        .onSnapshot(snapshot => {
+          messagesDiv.innerHTML = "";
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const div = document.createElement("div");
+            div.classList.add("message");
+            div.classList.add(data.senderId === currentUserId ? "sent" : "received");
+            div.textContent = data.text;
+            messagesDiv.appendChild(div);
+          });
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+    }
+
+    sendButton.addEventListener("click", async () => {
+      const text = messageInput.value.trim();
+      if (text === "") return;
+
+      await db.collection("chats")
+        .doc(requestId)
+        .collection("messages")
+        .add({
+          text,
+          senderId: currentUserId,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+      messageInput.value = "";
+    });
+  </script>
+</body>
+</html>
